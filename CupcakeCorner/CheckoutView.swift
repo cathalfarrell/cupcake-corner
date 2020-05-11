@@ -12,8 +12,9 @@ struct CheckoutView: View {
 
     @ObservedObject var order: Order
 
+    @State private var confirmationTitle = ""
     @State private var confirmationMessage = ""
-    @State private var showingConfirmation = false
+    @State private var showAlert = false
 
     var body: some View {
         GeometryReader { geo in
@@ -34,10 +35,16 @@ struct CheckoutView: View {
             }
         }
         .navigationBarTitle("Check out", displayMode: .inline)
-        .alert(isPresented: $showingConfirmation) {
-            Alert(title: Text("Thank you!"), message: Text(confirmationMessage), dismissButton: .default(Text("OK")))
+        .alert(isPresented: $showAlert) {
+            Alert(title: Text(confirmationTitle), message: Text(confirmationMessage), dismissButton: .default(Text("OK")))
         }
     }
+
+    /*
+       Challenge 2 - If our call to placeOrder() fails – for example if there is no internet connection
+       – show an informative alert for the user.
+       To test this, just disable WiFi on your Mac so the simulator has no connection either.
+    */
 
     func placeOrder() {
 
@@ -53,13 +60,21 @@ struct CheckoutView: View {
         request.httpBody = encoded
 
         URLSession.shared.dataTask(with: request) { data, response, error in
-            // handle the result here.
-            guard let data = data else {
-                print("No data in response: \(error?.localizedDescription ?? "Unknown error").")
-                return
+
+            DispatchQueue.main.async {
+
+                if let response = response as? HTTPURLResponse {
+                    print("Response STATUS code: \(response.statusCode)")
+                }
+                // handle the result here.
+                guard let data = data else {
+                    self.decodeError(error: error)
+                    return
+                }
+
+                self.decodeResponse(data)
             }
 
-            self.decodeResponse(data)
             
         }.resume()
     }
@@ -67,10 +82,20 @@ struct CheckoutView: View {
     fileprivate func decodeResponse(_ data: Data) {
         //Decode response
         if let decodedOrder = try? JSONDecoder().decode(Order.self, from: data) {
+            self.confirmationTitle = "Thank you!"
             self.confirmationMessage = "Your order for \(decodedOrder.quantity)x \(Order.types[decodedOrder.type].lowercased()) cupcakes is on its way!"
-            self.showingConfirmation = true
+            self.showAlert = true
         } else {
             print("Invalid response from server")
+        }
+    }
+
+    fileprivate func decodeError(error: Error?) {
+        if let error = error {
+            print("🛑 No data in response. Error: \(error.localizedDescription)")
+            self.confirmationTitle = "Request Failed"
+            self.confirmationMessage = error.localizedDescription
+            self.showAlert = true
         }
     }
 }
