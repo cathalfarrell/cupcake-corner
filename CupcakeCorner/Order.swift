@@ -36,8 +36,20 @@ class Order: ObservableObject, Codable {
     @Published var city = ""
     @Published var eircode = ""
 
+    /*
+
+     Challenge 1 - Our address fields are currently considered valid if they contain anything,
+     even if it’s just only whitespace.
+
+     Improve the validation to make sure a string of pure whitespace is invalid.
+
+     */
+
     var hasValidAddress: Bool {
-        if name.isEmpty || streetAddress.isEmpty || city.isEmpty || eircode.isEmpty {
+        if name.trimmingCharacters(in: .whitespaces).isEmpty ||
+            streetAddress.trimmingCharacters(in: .whitespaces).isEmpty ||
+            city.trimmingCharacters(in: .whitespaces).isEmpty ||
+            eircode.trimmingCharacters(in: .whitespaces).isEmpty {
             return false
         }
         return true
