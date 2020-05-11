@@ -59,15 +59,19 @@ struct CheckoutView: View {
                 return
             }
 
-            //Decode response
-            if let decodedOrder = try? JSONDecoder().decode(Order.self, from: data) {
-                self.confirmationMessage = "Your order for \(decodedOrder.quantity)x \(Order.types[decodedOrder.type].lowercased()) cupcakes is on its way!"
-                self.showingConfirmation = true
-            } else {
-                print("Invalid response from server")
-            }
+            self.decodeResponse(data)
             
         }.resume()
+    }
+
+    fileprivate func decodeResponse(_ data: Data) {
+        //Decode response
+        if let decodedOrder = try? JSONDecoder().decode(Order.self, from: data) {
+            self.confirmationMessage = "Your order for \(decodedOrder.quantity)x \(Order.types[decodedOrder.type].lowercased()) cupcakes is on its way!"
+            self.showingConfirmation = true
+        } else {
+            print("Invalid response from server")
+        }
     }
 }
 
